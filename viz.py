@@ -1,13 +1,15 @@
 import rasterio
-import numpy as np # Add this
+import numpy as np
 from rasterio.plot import show
 from rasterio.features import shapes
 from shapely.geometry import shape
 import matplotlib.pyplot as plt
 
+import geopandas as gpd
+
 # tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B1.TIF"
-# tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B7.TIF"
-tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_ST_DRAD.TIF"
+tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B7.TIF"
+# tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_ST_DRAD.TIF"
 
 with rasterio.open(tif_path) as src:
     # Read the actual data using a small sample for speed (out_shape)
@@ -27,6 +29,9 @@ with rasterio.open(tif_path) as src:
     # 3. Get the first valid polygon
     footprint_geom = shape(next(results)['geometry'])
 
+    # 4. Save to geopandas dataframe in pixel space
+    gdf = gpd.GeoDataFrame([{'geometry': footprint_geom}], crs=src.crs)
+
 # Setup the Plot
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -43,3 +48,11 @@ ax2.set_aspect('equal') # Prevent the shape from warping when resizing window
 
 plt.tight_layout()
 plt.show()
+
+# footprint_geom is in pixel space right now
+# Convert to geographic space (Lat/Long), use EPSG codes
+# 4326 = WGS 84 (Lat/Lon), 3857 = Mercator - Gemini AI
+gdf_latlon = gdf.to_crs(epsg=4326)
+
+# Save to file
+gdf_latlon.to_file('test.geojson', driver='GeoJSON')
