@@ -2,19 +2,25 @@ import rasterio
 import numpy as np
 from rasterio.plot import show
 from rasterio.features import shapes
-from shapely.geometry import shape
+from rasterio.warp import transform_geom
+from shapely.geometry import shape, mapping
 import matplotlib.pyplot as plt
 import os
 
 import geopandas as gpd
 
 # tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B1.TIF"
+<<<<<<< Updated upstream
 tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B7.TIF"
 # tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_ST_DRAD.TIF"
+=======
+# tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B7.TIF"
+tif_path = "data/example_data/LC09_L2SP_015034_20260228_20260301_02_T1_ST_DRAD.TIF"
+>>>>>>> Stashed changes
 
 DATA_PATH_EXAMPLE = "footprint_generator\data\example_data"
 
-# 
+
 def iterate():   #what is the typehinting for this?
     '''for the example data folder, iterate through each of the files in the folder
     and create a path name for each that can be put into the boundary generation function, as well as creating a
@@ -62,6 +68,7 @@ ax2.set_aspect('equal') # Prevent the shape from warping when resizing window
 plt.tight_layout()
 plt.show()
 
+<<<<<<< Updated upstream
 # footprint_geom is in pixel space right now
 # Convert to geographic space (Lat/Long), use EPSG codes
 # 4326 = WGS 84 (Lat/Lon), 3857 = Mercator - Gemini AI
@@ -69,3 +76,9 @@ gdf_latlon = gdf.to_crs(epsg=4326)
 
 # Save to file
 gdf_latlon.to_file('test.geojson', driver='GeoJSON')
+=======
+def transform_crs(input_crs, original_crs, geometry):
+    original_crs = src.crs
+    geometry = mapping(footprint_geom)
+    project_geom = transform_geom(original_crs, input_crs, geometry)
+>>>>>>> Stashed changes
