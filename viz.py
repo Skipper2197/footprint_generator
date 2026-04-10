@@ -4,12 +4,25 @@ from rasterio.plot import show
 from rasterio.features import shapes
 from shapely.geometry import shape
 import matplotlib.pyplot as plt
+import os
 
 import geopandas as gpd
 
 # tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B1.TIF"
 tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_SR_B7.TIF"
 # tif_path = "data/LC09_L2SP_015034_20260228_20260301_02_T1_ST_DRAD.TIF"
+
+DATA_PATH_EXAMPLE = "footprint_generator\data\example_data"
+
+# 
+def iterate():   #what is the typehinting for this?
+    '''for the example data folder, iterate through each of the files in the folder
+    and create a path name for each that can be put into the boundary generation function, as well as creating a
+    filename for the generated boundary to be saved under
+    '''
+    for filename in os.listdir(DATA_PATH_EXAMPLE):
+        tif_path = os.path.join(DATA_PATH_EXAMPLE, filename)
+
 
 with rasterio.open(tif_path) as src:
     # Read the actual data using a small sample for speed (out_shape)
