@@ -71,8 +71,9 @@ gdf_latlon = gdf.to_crs(epsg=4326)
 # Save to file
 gdf_latlon.to_file('test.geojson', driver='GeoJSON')
 
-
+input_crs = "epsg=4326"
 def transform_crs(input_crs, original_crs, geometry):
     original_crs = src.crs
     geometry = mapping(footprint_geom)
     project_geom = transform_geom(original_crs, input_crs, geometry)
+    gdf_latlon.to_file('test_2.geojson', driver='GeoJSON')
