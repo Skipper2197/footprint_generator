@@ -1,14 +1,17 @@
 from generator import extract_footprint, save_geojson
 from viz import plot_validation
+import os
 
-TIF_FILE = 'data/example_data/LC09_L2SP_015034_20260228_20260301_02_T1_ST_DRAD.TIF'
+SOURCE_DIR = './data/example_data/'
 
 def main():
-    gdf = extract_footprint(TIF_FILE)
+    for tif_file in os.listdir(SOURCE_DIR):
+        tif_path = f'{SOURCE_DIR}/{tif_file}'
+        gdf = extract_footprint(tif_path)
 
-    plot_validation(TIF_FILE, gdf)
+        plot_validation(tif_path, gdf)
 
-    save_geojson(gdf, 'geojsons/test.geojson')
+        save_geojson(gdf, f'geojsons/{os.path.splitext(tif_file)[0]}.geojson')
     return
 
 if __name__ == '__main__':
