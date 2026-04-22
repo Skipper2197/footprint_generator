@@ -10,8 +10,8 @@ def main():
         gdf = extract_footprint(tif_path)
 
         # plot_validation(tif_path, gdf)
-
-        save_geojson(gdf, f'geojsons/{os.path.splitext(tif_file)[0]}.geojson')
+        epsg = int(input("What projected coordinate system do you want to use? The default is NAD83: 4326, but NATRF2022: 10966 is the most recently updated CRS"))
+        save_geojson(gdf, f'geojsons/{os.path.splitext(tif_file)[0]}.geojson', epsg)
     return
 
 if __name__ == '__main__':
