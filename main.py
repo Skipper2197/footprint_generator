@@ -37,7 +37,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         # 2. The File Selector (Starts empty now)
         self.file_selector = LabeledComboBox("Select TIFF:", [])
         
-        self.action_buttons = ButtonRow(["Generate Footprint", "Export GeoJSON"])
+        self.action_buttons = ButtonRow(["Generate Footprint", "Process All", "Export GeoJSON"])
 
         # Add to layout
         self.controls.add_widget(self.folder_picker)
@@ -49,8 +49,10 @@ class GeoJsonGeneratorApp(QMainWindow):
 
         # 3. Signals: Connect folder picker to the scan function
         self.folder_picker.folder_changed.connect(self._update_file_list)
+
         self.action_buttons.buttons["Generate Footprint"].clicked.connect(self._process_file)
         self.action_buttons.buttons["Export GeoJSON"].clicked.connect(self._export_geojson)
+        self.action_buttons.buttons["Process All"].clicked.connect(self._process_all_files)
 
     def _update_file_list(self, folder_path: str) -> None:
         '''
@@ -113,6 +115,38 @@ class GeoJsonGeneratorApp(QMainWindow):
         out_path = os.path.join('./geojsons', f"{os.path.splitext(filename)[0]}.geojson")
         
         save_geojson(self.last_gdf, out_path)
+
+    def _process_all_files(self) -> None:
+        if not self.current_folder:
+            print("Please select a source folder first.")
+            return
+
+        # 1. Get list of all TIFF files
+        files = [f for f in os.listdir(self.current_folder) if f.lower().endswith(('.tif', '.tiff'))]
+        
+        if not files:
+            print("No TIFF files found to process.")
+            return
+        
+        print(f"Starting process for {len(files)} files...")
+
+        for filename in files:
+            try:
+                tif_path = os.path.join(self.current_folder, filename)
+                
+                # Extract the footprint
+                gdf = extract_footprint(tif_path)
+
+                if not gdf.empty:
+                        # Save automatically to the root geojsons folder
+                        out_name = f"{os.path.splitext(filename)[0]}.geojson"
+                        out_path = os.path.join('./geojsons', out_name)
+                        save_geojson(gdf, out_path)
+                        print(f"Processed: {filename}")
+                
+            except Exception as e:
+                print(f"Failed to process {filename}: {e}")
+        print("Processing complete.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
