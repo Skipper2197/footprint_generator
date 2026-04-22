@@ -9,7 +9,7 @@ def main():
         tif_path = f'{SOURCE_DIR}/{tif_file}'
         gdf = extract_footprint(tif_path)
 
-        plot_validation(tif_path, gdf)
+        # plot_validation(tif_path, gdf)
 
         save_geojson(gdf, f'geojsons/{os.path.splitext(tif_file)[0]}.geojson')
     return
