@@ -10,6 +10,7 @@ from PySide6.QtGui import QPixmap, QImage
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import QFileDialog
 
 # --- Constants ---
 DEFAULT_SPACING = 10
@@ -434,3 +435,36 @@ class CollapsibleSection(QWidget):
         clean_title = self.toggle_btn.text()[2:]
         self.toggle_btn.setText(f"{prefix} {clean_title}")
         return None
+
+class FolderPicker(QWidget):
+    '''
+    A widget that lets a user browse for a directory.
+    Emits a signal (folder_changed) when a new path is selected.
+    '''
+    folder_changed = Signal(str)
+
+    def __init__(self, label_text: str) -> None:
+        super().__init__()
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.label = QLabel(label_text)
+        self.path_display = QLineEdit()
+        self.path_display.setPlaceholderText("No folder selected...")
+        self.path_display.setReadOnly(True)
+        
+        self.browse_btn = QPushButton("Browse")
+        self.browse_btn.clicked.connect(self._open_dialog)
+
+        layout.addWidget(self.label)
+        layout.addWidget(self.path_display)
+        layout.addWidget(self.browse_btn)
+
+    def _open_dialog(self) -> None:
+        folder = QFileDialog.getExistingDirectory(self, "Select Data Folder")
+        if folder:
+            self.path_display.setText(folder)
+            self.folder_changed.emit(folder)
+            
+    def path(self) -> str:
+        return self.path_display.text()

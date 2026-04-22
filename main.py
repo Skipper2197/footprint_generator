@@ -14,12 +14,11 @@ os.environ["QT_API"] = "pyside6"
 from PySide6.QtWidgets import QApplication, QMainWindow
 from src.pysidecomp import (
     FigureDisplayArea, ControlPanel, LabeledInput, 
-    LabeledSlider, ButtonRow, WindowWithFigureAbove, LabeledComboBox
+    LabeledSlider, ButtonRow, WindowWithFigureAbove,
+    LabeledComboBox, FolderPicker
 )
 from src.generator import extract_footprint #
 import rasterio #
-
-SOURCE_DIR = './data/example_data/'
 
 class GeoJsonGeneratorApp(QMainWindow):
     def __init__(self) -> None:
@@ -31,26 +30,43 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.display = FigureDisplayArea()
         self.controls = ControlPanel(title="File Processing")
         
-        # Get list of TIFFs for the dropdown
-        tiff_files = [f for f in os.listdir(SOURCE_DIR) if f.endswith('.tif')]
-        self.file_selector = LabeledComboBox("Select TIFF:", tiff_files)
+        # 1. NEW: The Folder Picker
+        self.folder_picker = FolderPicker("Source Folder:")
+        
+        # 2. The File Selector (Starts empty now)
+        self.file_selector = LabeledComboBox("Select TIFF:", [])
         
         self.action_buttons = ButtonRow(["Generate Footprint", "Export GeoJSON"])
 
-        # 2. Layout
+        # Add to layout
+        self.controls.add_widget(self.folder_picker)
         self.controls.add_widget(self.file_selector)
         self.controls.add_widget(self.action_buttons)
         
         self.main_layout = WindowWithFigureAbove(self.display, self.controls)
         self.setCentralWidget(self.main_layout)
 
-        # 3. Signals
+        # 3. Signals: Connect folder picker to the scan function
+        self.folder_picker.folder_changed.connect(self._update_file_list)
         self.action_buttons.buttons["Generate Footprint"].clicked.connect(self._process_file)
-        return None
+
+    def _update_file_list(self, folder_path: str) -> None:
+        '''
+        Scans the selected folder and populates the dropdown.
+        '''
+        self.file_selector.combo.clear()
+        files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.tif', '.tiff'))]
+        
+        if files:
+            self.file_selector.combo.addItems(files)
+            print(f"Found {len(files)} TIFF files.")
+        else:
+            print("No TIFF files found in this directory.")
 
     def _process_file(self) -> None:
         filename = self.file_selector.combo.currentText()
-        tif_path = os.path.join(SOURCE_DIR, filename)
+        if not filename:
+            return # Don't crash if no file is selected
 
         # Run your extraction logic
         gdf = extract_footprint(tif_path)
