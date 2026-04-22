@@ -18,7 +18,8 @@ from src.pysidecomp import (
     LabeledComboBox, FolderPicker
 )
 from src.generator import extract_footprint #
-import rasterio #
+import rasterio
+from rasterio.plot import plotting_extent
 
 class GeoJsonGeneratorApp(QMainWindow):
     def __init__(self) -> None:
@@ -49,13 +50,16 @@ class GeoJsonGeneratorApp(QMainWindow):
         # 3. Signals: Connect folder picker to the scan function
         self.folder_picker.folder_changed.connect(self._update_file_list)
         self.action_buttons.buttons["Generate Footprint"].clicked.connect(self._process_file)
+        self.action_buttons.buttons["Export GeoJSON"].clicked.connect(self._export_geojson)
 
     def _update_file_list(self, folder_path: str) -> None:
         '''
         Scans the selected folder and populates the dropdown.
         '''
+
+        self.current_folder = folder_path  # Save the path for later use
         self.file_selector.combo.clear()
-        files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.tif', '.tiff'))]
+        files = [f for f in os.listdir(folder_path)]
         
         if files:
             self.file_selector.combo.addItems(files)
@@ -65,28 +69,50 @@ class GeoJsonGeneratorApp(QMainWindow):
 
     def _process_file(self) -> None:
         filename = self.file_selector.combo.currentText()
-        if not filename:
-            return # Don't crash if no file is selected
+        if not filename or not self.current_folder:
+            return 
 
-        # Run your extraction logic
-        gdf = extract_footprint(tif_path)
+        tif_path = os.path.join(self.current_folder, filename)
 
-        # Plot into the GUI instead of a popup
+        # 1. Run extraction
+        self.last_gdf = extract_footprint(tif_path)
+
+        # 2. Prepare the figure
         fig = self.display.get_mpl_figure()
         fig.clear()
-        
         ax = fig.add_subplot(111)
+
         with rasterio.open(tif_path) as src:
-            # Show a preview of the raster
+            # Create a downsampled preview for speed
+            # (Matches the scale_factor=10 in your generator)
             preview = src.read(1, out_shape=(src.height // 10, src.width // 10))
-            ax.imshow(preview, extent=rasterio.plot.utils.get_vis_extent(src))
             
-            # Overlay the footprint
-            gdf.plot(ax=ax, facecolor='#ff7f0e', alpha=0.3, edgecolor='#ff7f0e', linewidth=2)
+            # Use plotting_extent to get [xmin, xmax, ymin, ymax] in map coordinates
+            extent = plotting_extent(src)
+            
+            # Show the raster preview
+            ax.imshow(preview, extent=extent, cmap='viridis')
+            
+            # 3. Overlay the footprint
+            if not self.last_gdf.empty:
+                self.last_gdf.plot(ax=ax, facecolor='#ff7f0e', alpha=0.3, edgecolor='#ff7f0e', linewidth=2)
+            
             ax.set_title(f"Footprint for {filename}")
 
+        # 4. Refresh the canvas
         self.display.mpl_canvas.draw()
         return None
+    
+    def _export_geojson(self) -> None:
+        # Ensure you have a GDF to save
+        if not hasattr(self, 'last_gdf') or self.last_gdf is None:
+            print("Generate a footprint first!")
+            return
+            
+        filename = self.file_selector.combo.currentText()
+        out_path = os.path.join('./geojsons', f"{os.path.splitext(filename)[0]}.geojson")
+        
+        save_geojson(self.last_gdf, out_path)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
