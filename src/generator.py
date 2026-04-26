@@ -4,6 +4,8 @@ import geopandas as gpd
 from rasterio.features import shapes
 from shapely.geometry import shape
 
+import os
+
 def extract_footprint(tif_path: str, scale_factor:int = 10) -> gpd.GeoDataFrame:
     with rasterio.open(tif_path) as src:
         new_height = src.height // scale_factor
@@ -30,8 +32,25 @@ def extract_footprint(tif_path: str, scale_factor:int = 10) -> gpd.GeoDataFrame:
 
         return footprint
     
-def save_geojson(gdf: gpd.GeoDataFrame, out_path: str, epsg: int =4326) -> None:
+def export_gdf(gdf: gpd.GeoDataFrame, out_path: str, driver: str = None, epsg: int = 4326) -> None:
     gdf_out = gdf.to_crs(epsg=epsg)
-    gdf_out.to_file(out_path, driver='GeoJSON')
-    print(f'File saved to {out_path}')
+    
+    if driver is None:
+        # Get extension without the dot
+        ext = os.path.splitext(out_path)[1].lower().replace('.', '')
+        
+        driver_map = {
+            'gpkg': 'GPKG',
+            'shp': 'ESRI Shapefile',
+            'geojson': 'GeoJSON',
+            'json': 'GeoJSON'
+        }
+        driver = driver_map.get(ext, 'GeoJSON')
+
+    # Save using the determined driver
+    gdf_out.to_file(out_path, driver=driver)
+    print(f"Exported to {out_path} via {driver}")
+
+    gdf_out.to_file(out_path, driver=driver)
+    print(f"Exported to {out_path} via {driver}")
     return

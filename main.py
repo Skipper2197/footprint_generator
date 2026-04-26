@@ -1,9 +1,10 @@
-from src.generator import extract_footprint, save_geojson
+from src.generator import extract_footprint, export_gdf
 from src.viz import plot_validation
 import os
 import sys
 from pathlib import Path
 import PySide6
+import matplotlib.pyplot as plt
 
 # This automatically finds the plugins folder relative to the user's PySide6 install
 pyside_root = Path(PySide6.__file__).parent
@@ -27,6 +28,9 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.setWindowTitle("Satellite Footprint Generator")
         self.resize(1000, 700)
 
+        self.current_folder = None
+        self.last_gdf = None
+
         # 1. Create UI Components
         self.display = FigureDisplayArea()
         self.controls = ControlPanel(title="File Processing")
@@ -36,6 +40,10 @@ class GeoJsonGeneratorApp(QMainWindow):
         
         # 2. The File Selector (Starts empty now)
         self.file_selector = LabeledComboBox("Select TIFF:", [])
+
+        # Format Selector
+        self.format_selector = LabeledComboBox("Export Format:", ["GeoJSON", "GeoPackage", "Shapefile", "PNG (Image)"])
+        self.controls.add_widget(self.format_selector)
         
         self.action_buttons = ButtonRow(["Generate Footprint", "Process All", "Export GeoJSON"])
 
@@ -51,7 +59,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.folder_picker.folder_changed.connect(self._update_file_list)
 
         self.action_buttons.buttons["Generate Footprint"].clicked.connect(self._process_file)
-        self.action_buttons.buttons["Export GeoJSON"].clicked.connect(self._export_geojson)
+        self.action_buttons.buttons["Export GeoJSON"].clicked.connect(self._export_data)
         self.action_buttons.buttons["Process All"].clicked.connect(self._process_all_files)
 
     def _update_file_list(self, folder_path: str) -> None:
@@ -105,16 +113,60 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.display.mpl_canvas.draw()
         return None
     
-    def _export_geojson(self) -> None:
-        # Ensure you have a GDF to save
+    def _export_data(self) -> None:
         if not hasattr(self, 'last_gdf') or self.last_gdf is None:
-            print("Generate a footprint first!")
+            print("No data to export.")
             return
             
         filename = self.file_selector.combo.currentText()
-        out_path = os.path.join('./geojsons', f"{os.path.splitext(filename)[0]}.geojson")
+        base_name = os.path.splitext(filename)[0]
+        fmt = self.format_selector.combo.currentText()
         
-        save_geojson(self.last_gdf, out_path)
+        # Ensure export directory exists
+        os.makedirs('./exports', exist_ok=True)
+
+        if fmt == "PNG (Image)":
+            out_path = os.path.join('./exports', f"{base_name}.png")
+            self._save_png_preview(out_path)
+        else:
+            ext_map = {"GeoJSON": ".geojson", "GeoPackage": ".gpkg", "Shapefile": ".shp"}
+            driver_map = {"GeoJSON": "GeoJSON", "GeoPackage": "GPKG", "Shapefile": "ESRI Shapefile"}
+            
+            out_path = os.path.join('./exports', f"{base_name}{ext_map[fmt]}")
+            export_gdf(self.last_gdf, out_path, driver=driver_map[fmt])
+
+    def _save_png_preview(self, path: str) -> None:
+        filename = self.file_selector.combo.currentText()
+        tif_path = os.path.join(self.current_folder, filename)
+
+        # 2. Create a "headless" figure
+        fig, ax = plt.subplots(figsize=(10, 10))
+
+        try:
+            with rasterio.open(tif_path) as src:
+                # Create a downsampled preview for the background (1/10th scale)
+                preview = src.read(1, out_shape=(src.height // 10, src.width // 10))
+                
+                # Map the pixel coordinates to geographic coordinates
+                extent = plotting_extent(src)
+                
+                # Draw the raster background
+                ax.imshow(preview, extent=extent, cmap='viridis')
+                
+                # 3. Overlay the footprint on top
+                self.last_gdf.plot(ax=ax, facecolor='#ff7f0e', alpha=0.3, edgecolor='#ff7f0e', linewidth=2)
+                
+                ax.set_title(f"Boundary Overlay: {filename}")
+                ax.set_axis_off()  # Keeps the focus on the data, not the plot axes
+                
+                # 4. Save with high resolution
+                fig.savefig(path, bbox_inches='tight', dpi=300)
+                print(f"Saved overlay image to {path}")
+
+        except Exception as e:
+            print(f"Failed to generate PNG overlay: {e}")
+        
+        plt.close(fig)
 
     def _process_all_files(self) -> None:
         if not self.current_folder:
@@ -124,29 +176,33 @@ class GeoJsonGeneratorApp(QMainWindow):
         # 1. Get list of all TIFF files
         files = [f for f in os.listdir(self.current_folder) if f.lower().endswith(('.tif', '.tiff'))]
         
-        if not files:
-            print("No TIFF files found to process.")
-            return
-        
-        print(f"Starting process for {len(files)} files...")
+        selected_fmt = self.format_selector.combo.currentText()
+        print(f"Starting batch process for {len(files)} files into {selected_fmt} format...")
 
         for filename in files:
             try:
                 tif_path = os.path.join(self.current_folder, filename)
                 
-                # Extract the footprint
+                # 3. Extract the footprint using your generator logic
                 gdf = extract_footprint(tif_path)
 
                 if not gdf.empty:
-                        # Save automatically to the root geojsons folder
-                        out_name = f"{os.path.splitext(filename)[0]}.geojson"
-                        out_path = os.path.join('./geojsons', out_name)
-                        save_geojson(gdf, out_path)
-                        print(f"Processed: {filename}")
-                
+                    # 4. Use the generalized export logic
+                    # We temporarily set self.last_gdf so we can reuse the _export_data logic
+                    self.last_gdf = gdf
+                    
+                    # Update the combo box selection so the export naming is correct
+                    # (Optional: this ensures the logic knows which file we are on)
+                    index = self.file_selector.combo.findText(filename)
+                    if index >= 0:
+                        self.file_selector.combo.setCurrentIndex(index)
+                    
+                    self._export_data()
+
             except Exception as e:
                 print(f"Failed to process {filename}: {e}")
-        print("Processing complete.")
+
+        print(f"Batch processing complete. All files exported to {selected_fmt}.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

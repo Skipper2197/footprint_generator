@@ -1,8 +1,0 @@
-{
-"type": "FeatureCollection",
-"name": "2024-08-13_analysis_ready_ps_sr",
-"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
-"features": [
-{ "type": "Feature", "properties": { }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 13.294553288779644, 52.40994260134832 ], [ 13.302822623479344, 52.194238957888366 ], [ 13.653878879883059, 52.198766799669073 ], [ 13.647318599402601, 52.414505591302017 ], [ 13.294553288779644, 52.40994260134832 ] ] ] } }
-]
-}
