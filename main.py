@@ -45,7 +45,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.format_selector = LabeledComboBox("Export Format:", ["GeoJSON", "GeoPackage", "Shapefile", "PNG (Image)"])
         self.controls.add_widget(self.format_selector)
         
-        self.action_buttons = ButtonRow(["Generate Footprint", "Process All", "Export GeoJSON"])
+        self.action_buttons = ButtonRow(["Generate Footprint", "Process All", "Export"])
 
         # Add to layout
         self.controls.add_widget(self.folder_picker)
@@ -59,7 +59,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.folder_picker.folder_changed.connect(self._update_file_list)
 
         self.action_buttons.buttons["Generate Footprint"].clicked.connect(self._process_file)
-        self.action_buttons.buttons["Export GeoJSON"].clicked.connect(self._export_data)
+        self.action_buttons.buttons["Export"].clicked.connect(self._export_data)
         self.action_buttons.buttons["Process All"].clicked.connect(self._process_all_files)
 
     def _update_file_list(self, folder_path: str) -> None:
