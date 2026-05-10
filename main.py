@@ -49,11 +49,12 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.action_buttons = ButtonRow(["Generate Footprint", "Process All", "Export"])
 
         # coordinate reference system (CRS) dropdown menu
-        # NATRF2022 does not work right now, most likely for being too recent
+        # this list is designed to be malleable.
+        # the user may add or remove any CRS here by filling in the relevant info.
         self.crs_options = {
-            "WGS 84 (EPSG:4326)": 4326,
             "Web Mercator (EPSG:3857)": 3857,
-            "NATRF2022 (EPSG:10966)": 10966
+            "NAD83 (EPSG:4269)": 4269,
+            "WGS 84 (EPSG:4326)": 4326
         }
 
         # UI component
