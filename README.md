@@ -17,6 +17,15 @@ The GeoJSON Footprint Generator is a specialized GIS utility designed to automat
 * **Multi-Format Export**: Support for common geospatial formats including **GeoJSON** and more.
 * **Multi-CRS Export**: Support for common coordinate reference systems. See below for the basic available options.
 
+## CRS Options
+You can select to export your file into different coordinate reference systems, such as:
+  * **WGS84**: globally centered standard coordinate system for cartography, geospatial data, and GPS
+  * **Web Mercator**: commonly used for web mapping
+  * **NAD83**: standard coordinate system for North American maps
+  etc.
+
+This list is easily modifiable according to your preferences, given that you know the EPSG codes for your desired coordinate reference systems.
+
 ## Getting Started
 
 ### Prerequisites
@@ -36,13 +45,7 @@ uv run main.py
 
 
 ## Why this project?
-The goal is to provide a user-friendly interface that streamlines complex GIS workflows, making it easier for users to visualize and process geographic data without manual, time-consuming intervention. These Python modules, like rasterio, facilitate data collection and geospatial analysis.
+The goal is to provide a user-friendly interface that streamlines complex GIS workflows, making it easier for users to visualize and process geographic data without manual, time-consuming intervention. These Python modules, like rasterio, facilitate data collection and geospatial analysis by efficiently processing entire folders of large data files.
 
-## CRS Options
-You can select to export your file into different coordinate reference systems, such as:
-  * **WGS84**: globally centered standard coordinate system for cartography, geospatial data, and GPS
-  * **Web Mercator**: commonly used for web mapping
-  * **NAD83**: standard coordinate system for North American maps
-  etc.
 
-This list is easily modifiable according to your preferences, given that you know the EPSG codes for your desired coordinate reference systems.
+
