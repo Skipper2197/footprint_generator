@@ -31,23 +31,36 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.current_folder = None
         self.last_gdf = None
 
-        # 1. Create UI Components
+        # creates the main UI components
         self.display = FigureDisplayArea()
         self.controls = ControlPanel(title="File Processing")
         
-        # 1. NEW: The Folder Picker
+        # user selects a folder of TIF files to process
         self.folder_picker = FolderPicker("Source Folder:")
         
-        # 2. The File Selector (Starts empty now)
+        # user selects a TIF file from the folder (empty by default)
         self.file_selector = LabeledComboBox("Select TIFF:", [])
 
-        # Format Selector
+        # export format selector
+        # these file formats are relevant files for GIS creation and analysis
         self.format_selector = LabeledComboBox("Export Format:", ["GeoJSON", "GeoPackage", "Shapefile", "PNG (Image)"])
         self.controls.add_widget(self.format_selector)
         
         self.action_buttons = ButtonRow(["Generate Footprint", "Process All", "Export"])
 
-        # Add to layout
+        # coordinate reference system (CRS) dropdown menu
+        # NATRF2022 does not work right now, most likely for being too recent
+        self.crs_options = {
+            "WGS 84 (EPSG:4326)": 4326,
+            "Web Mercator (EPSG:3857)": 3857,
+            "NATRF2022 (EPSG:10966)": 10966
+        }
+
+        # UI component
+        # uses the dict keys for the dropdown items
+        self.crs_selector = LabeledComboBox("Target CRS:", list(self.crs_options.keys()))
+
+        self.controls.add_widget(self.crs_selector)
         self.controls.add_widget(self.folder_picker)
         self.controls.add_widget(self.file_selector)
         self.controls.add_widget(self.action_buttons)
@@ -55,7 +68,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         self.main_layout = WindowWithFigureAbove(self.display, self.controls)
         self.setCentralWidget(self.main_layout)
 
-        # 3. Signals: Connect folder picker to the scan function
+        # cConnect folder picker to the scan function
         self.folder_picker.folder_changed.connect(self._update_file_list)
 
         self.action_buttons.buttons["Generate Footprint"].clicked.connect(self._process_file)
@@ -67,7 +80,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         Scans the selected folder and populates the dropdown.
         '''
 
-        self.current_folder = folder_path  # Save the path for later use
+        self.current_folder = folder_path  # saves the path for later use
         self.file_selector.combo.clear()
         files = [f for f in os.listdir(folder_path)]
         
@@ -84,17 +97,16 @@ class GeoJsonGeneratorApp(QMainWindow):
 
         tif_path = os.path.join(self.current_folder, filename)
 
-        # 1. Run extraction
+        # run extraction
         self.last_gdf = extract_footprint(tif_path)
 
-        # 2. Prepare the figure
+        # prepare the figure for display
         fig = self.display.get_mpl_figure()
         fig.clear()
         ax = fig.add_subplot(111)
 
         with rasterio.open(tif_path) as src:
-            # Create a downsampled preview for speed
-            # (Matches the scale_factor=10 in your generator)
+            # Creates a downsampled preview for speed
             preview = src.read(1, out_shape=(src.height // 10, src.width // 10))
             
             # Use plotting_extent to get [xmin, xmax, ymin, ymax] in map coordinates
@@ -103,21 +115,25 @@ class GeoJsonGeneratorApp(QMainWindow):
             # Show the raster preview
             ax.imshow(preview, extent=extent, cmap='viridis')
             
-            # 3. Overlay the footprint
+            # Overlay the footprint
             if not self.last_gdf.empty:
                 self.last_gdf.plot(ax=ax, facecolor='#ff7f0e', alpha=0.3, edgecolor='#ff7f0e', linewidth=2)
             
             ax.set_title(f"Footprint for {filename}")
 
-        # 4. Refresh the canvas
+        # Refresh the canvas
         self.display.mpl_canvas.draw()
         return None
     
     def _export_data(self) -> None:
         if not hasattr(self, 'last_gdf') or self.last_gdf is None:
-            print("No data to export.")
+            print("No data to export. Try 'Generate Footprint' first.")
             return
-            
+
+        # import CRS dictionary
+        selected_crs_name = self.crs_selector.combo.currentText()
+        target_epsg = self.crs_options[selected_crs_name]
+
         filename = self.file_selector.combo.currentText()
         base_name = os.path.splitext(filename)[0]
         fmt = self.format_selector.combo.currentText()
@@ -133,7 +149,7 @@ class GeoJsonGeneratorApp(QMainWindow):
             driver_map = {"GeoJSON": "GeoJSON", "GeoPackage": "GPKG", "Shapefile": "ESRI Shapefile"}
             
             out_path = os.path.join('./exports', f"{base_name}{ext_map[fmt]}")
-            export_gdf(self.last_gdf, out_path, driver=driver_map[fmt])
+            export_gdf(self.last_gdf, out_path, driver=driver_map[fmt], epsg=target_epsg)
 
     def _save_png_preview(self, path: str) -> None:
         filename = self.file_selector.combo.currentText()
@@ -153,13 +169,13 @@ class GeoJsonGeneratorApp(QMainWindow):
                 # Draw the raster background
                 ax.imshow(preview, extent=extent, cmap='viridis')
                 
-                # 3. Overlay the footprint on top
+                # Overlay the footprint on top
                 self.last_gdf.plot(ax=ax, facecolor='#ff7f0e', alpha=0.3, edgecolor='#ff7f0e', linewidth=2)
                 
                 ax.set_title(f"Boundary Overlay: {filename}")
                 ax.set_axis_off()  # Keeps the focus on the data, not the plot axes
                 
-                # 4. Save with high resolution
+                # Save with high resolution
                 fig.savefig(path, bbox_inches='tight', dpi=300)
                 print(f"Saved overlay image to {path}")
 
@@ -173,7 +189,7 @@ class GeoJsonGeneratorApp(QMainWindow):
             print("Please select a source folder first.")
             return
 
-        # 1. Get list of all TIFF files
+        # Get list of all TIFF files
         files = [f for f in os.listdir(self.current_folder) if f.lower().endswith(('.tif', '.tiff'))]
         
         selected_fmt = self.format_selector.combo.currentText()
@@ -183,16 +199,15 @@ class GeoJsonGeneratorApp(QMainWindow):
             try:
                 tif_path = os.path.join(self.current_folder, filename)
                 
-                # 3. Extract the footprint using your generator logic
+                # Extract the footprint using your generator logic
                 gdf = extract_footprint(tif_path)
 
                 if not gdf.empty:
-                    # 4. Use the generalized export logic
+                    # Use the generalized export logic
                     # We temporarily set self.last_gdf so we can reuse the _export_data logic
                     self.last_gdf = gdf
                     
                     # Update the combo box selection so the export naming is correct
-                    # (Optional: this ensures the logic knows which file we are on)
                     index = self.file_selector.combo.findText(filename)
                     if index >= 0:
                         self.file_selector.combo.setCurrentIndex(index)
