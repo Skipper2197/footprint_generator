@@ -34,3 +34,8 @@ uv run main.py
 
 ## Why this project?
 The goal is to provide a user-friendly interface that simplifies complex GIS workflows, making it easier for users to visualize and process geographic data without manual intervention
+
+## CRS Options
+You can select select to export your file into different coordinate reference systems, such as:
+  * **WGS84** globaly centered standard coordinate system for cartography, geospatial data, and GPS
+  * **Web Mercator** commonly used for web mapping
