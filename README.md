@@ -37,5 +37,5 @@ The goal is to provide a user-friendly interface that simplifies complex GIS wor
 
 ## CRS Options
 You can select select to export your file into different coordinate reference systems, such as:
-  * **WGS84** globaly centered standard coordinate system for cartography, geospatial data, and GPS
-  * **Web Mercator** commonly used for web mapping
+  * **WGS84**: globaly centered standard coordinate system for cartography, geospatial data, and GPS
+  * **Web Mercator**: commonly used for web mapping
