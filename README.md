@@ -1,8 +1,10 @@
 # GeoJSON Footprint Generator
 
-<u>Developed by Helena Beinhacker, David Bunich, and Ian Cullicott.</u>
+*Developed by Helena Beinhacker, David Bunich, and Ian Cullicott.*
 
-The GeoJSON Footprint Generator is a specialized GIS utility designed to automate the extraction of precise geographic boundaries from raster data and provide a user-friendly experience for those who prefer not to . By filtering out "no-data" artifacts and calculating the geometry of valid pixels, it transforms raw TIFF imagery into clean, usable GeoJSON footprints. Other file formats are also available for exporting.
+The GeoJSON Footprint Generator is a specialized GIS utility designed to automate the extraction of precise geographic boundaries from raster data and provide a user-friendly experience for those who prefer not to work primarily in the terminal. By filtering out "no-data" artifacts and calculating the geometry of valid pixels, it transforms raw TIFF imagery into clean, usable GeoJSON footprints. Other file formats are also available for exporting.
+
+
 
 ![Application Preview](app_demo.png)
 
@@ -21,12 +23,12 @@ The GeoJSON Footprint Generator is a specialized GIS utility designed to automat
 
 You will need `uv` installed on your system. If you don't have it yet, install [uv](https://github.com/astral-sh/uv):
 
-1. Clone the repository *(Ran once if performed correctly)*
+1. Clone the repository - *(Ran once if performed correctly)*
 ~~~bash
 git clone https://github.com/Skipper2197/footprint_generator.git
 cd footprint_generator
 ~~~
-2. Sync dependencies and run *(Ran for every use)*
+2. Sync dependencies and run - *(Ran for every use)*
 ~~~bash
 uv sync
 uv run main.py
@@ -34,11 +36,11 @@ uv run main.py
 
 
 ## Why this project?
-The goal is to provide a user-friendly interface that simplifies complex GIS workflows, making it easier for users to visualize and process geographic data without manual intervention
+The goal is to provide a user-friendly interface that streamlines complex GIS workflows, making it easier for users to visualize and process geographic data without manual, time-consuming intervention. These Python modules, like rasterio, facilitate data collection and geospatial analysis.
 
 ## CRS Options
 You can select to export your file into different coordinate reference systems, such as:
-  * **WGS84**: globaly centered standard coordinate system for cartography, geospatial data, and GPS
+  * **WGS84**: globally centered standard coordinate system for cartography, geospatial data, and GPS
   * **Web Mercator**: commonly used for web mapping
   * **NAD83**: standard coordinate system for North American maps
   etc.
