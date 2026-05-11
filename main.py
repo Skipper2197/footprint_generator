@@ -156,7 +156,7 @@ class GeoJsonGeneratorApp(QMainWindow):
         filename = self.file_selector.combo.currentText()
         tif_path = os.path.join(self.current_folder, filename)
 
-        # 2. Create a "headless" figure
+        # Create a "headless" figure
         fig, ax = plt.subplots(figsize=(10, 10))
 
         try:

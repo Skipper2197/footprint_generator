@@ -19,14 +19,17 @@ def extract_footprint(tif_path: str, scale_factor:int = 10) -> gpd.GeoDataFrame:
             (src.height / mask.shape[0])
         )
 
+        # Save results to a dictionary for each found geometry
         results = (
             {'geometry': s} 
             for s, v in shapes(mask, transform=transform) 
             if v == 255
         )
 
+        # Select the first valid geometry extracted
         footprint_geom = shape(next(results)['geometry'])
 
+        # Convert to a GeoPandas dataframe
         footprint = gpd.GeoDataFrame([{'geometry': footprint_geom}], crs=src.crs)
 
         return footprint
@@ -50,6 +53,4 @@ def export_gdf(gdf: gpd.GeoDataFrame, out_path: str, driver: str = None, epsg: i
     gdf_out.to_file(out_path, driver=driver)
     print(f"Exported to {out_path} via {driver}")
 
-    gdf_out.to_file(out_path, driver=driver)
-    print(f"Exported to {out_path} via {driver}")
     return
